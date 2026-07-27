@@ -8,7 +8,7 @@ let runtimeConfig: RuntimeConfig | null = null;
 let resultsMessage = "";
 const PENDING_EMAIL_KEY = "smartBookmarks.pendingLoginEmail";
 
-function brand(title = "Smart Bookmarks", subtitle = "") {
+function brand(title = "LembraLink", subtitle = "") {
   return `<div class="brand-title"><img class="brand-icon" src="icons/icon.svg" alt="" /><div><h1>${escape(title)}</h1>${subtitle ? `<small>${escape(subtitle)}</small>` : ""}</div></div>`;
 }
 
@@ -48,7 +48,7 @@ function renderConfig(config = runtimeConfig, message = "") {
 }
 
 function renderLogin(message = "", codeRequested = false) {
-  app.innerHTML = `<div class="row">${brand("Smart Bookmarks", "Salve agora. Encontre quando precisar.")}<button class="secondary" id="settings">Configurar</button></div>
+  app.innerHTML = `<div class="row">${brand("LembraLink", "Salve agora. Encontre quando precisar.")}<button class="secondary" id="settings">Configurar</button></div>
     <form id="login-form"><label>Email<input id="email" type="email" autocomplete="email" required value="${escape(email)}" /></label>
     ${codeRequested ? '<label>Codigo ou link recebido<input id="otp" autocomplete="one-time-code" required placeholder="Cole o codigo ou o link do email" /></label><small>Se o email trouxer um link, copie o link inteiro e cole aqui sem abri-lo.</small>' : ''}
     <button>${codeRequested ? "Entrar" : "Enviar link de acesso"}</button></form>${notice(message, "error")}`;
@@ -98,7 +98,7 @@ function renderBookmarks() {
 }
 function setStatus(message: string, kind: "error" | "success") { document.querySelector<HTMLDivElement>("#status")!.outerHTML = `<div id="status">${notice(message, kind)}</div>`; }
 function renderApp() {
-  app.innerHTML = `<div class="row">${brand("Smart Bookmarks", email)}<button class="secondary" id="settings">Configurar</button><button class="secondary" id="logout">Sair</button></div>
+  app.innerHTML = `<div class="row">${brand("LembraLink", email)}<button class="secondary" id="settings">Configurar</button><button class="secondary" id="logout">Sair</button></div>
     <h2>Pagina atual</h2><button id="save">Salvar esta pagina</button><div id="status"></div>
     <h2>Buscar favoritos</h2><form id="search-form" class="row"><input id="query" required placeholder="Ex.: reduzir leituras no Spark" /><button>Buscar</button></form><div id="results"></div>`;
   document.querySelector<HTMLButtonElement>("#settings")!.addEventListener("click", () => renderConfig(runtimeConfig));

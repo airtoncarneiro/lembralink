@@ -1,4 +1,4 @@
-# Smart Bookmarks Extension POC
+# LembraLink Extension POC
 
 ## Para quem vai testar a extensao compilada
 

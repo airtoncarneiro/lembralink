@@ -1,4 +1,4 @@
-# Configuracao manual — Smart Bookmarks POC
+# Configuracao manual — LembraLink POC
 
 Este guia cria um ambiente isolado para uma pessoa usar a extensao: um projeto
 Supabase, uma chave Gemini e uma Edge Function propria. A instalacao da extensao
@@ -22,8 +22,8 @@ Crie uma pasta local temporaria para os comandos abaixo. Ela nao pertence ao
 repositorio e pode conter tokens temporarios:
 
 ```bash
-mkdir -p ~/smart-bookmarks-poc
-cd ~/smart-bookmarks-poc
+mkdir -p ~/lembralink-poc
+cd ~/lembralink-poc
 ```
 
 Nunca coloque chaves Gemini, JWTs, refresh tokens, `service_role` ou arquivos

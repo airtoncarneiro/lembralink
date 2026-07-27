@@ -1,4 +1,4 @@
-# Smart Bookmarks POC
+# LembraLink POC
 
 Extensao Chrome para salvar paginas e reencontra-las por significado. Cada
 usuario configura o proprio projeto Supabase e a propria chave Gemini; nenhum
@@ -13,7 +13,7 @@ Ele cobre, em ordem, Supabase Auth, banco com RLS, Gemini e Edge Function.
 
 Quando houver uma versao em **Releases** deste repositorio:
 
-1. Baixe o arquivo `smart-bookmarks-extension-<versao>.zip` na secao **Assets**.
+1. Baixe o arquivo `lembralink-extension-<versao>.zip` na secao **Assets**.
 2. Descompacte-o. A pasta resultante deve conter `manifest.json` diretamente.
 3. No Chrome, abra `chrome://extensions`, habilite **Modo do desenvolvedor** e
    clique em **Carregar sem compactacao**.

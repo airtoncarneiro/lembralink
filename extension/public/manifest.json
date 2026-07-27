@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Smart Bookmarks POC",
-  "version": "0.1.4",
-  "description": "Salve e encontre favoritos por significado.",
+  "name": "LembraLink POC",
+  "version": "0.2.0",
+  "description": "Salve links e reencontre-os por significado.",
   "action": {
-    "default_title": "Smart Bookmarks",
+    "default_title": "LembraLink",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
