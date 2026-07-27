@@ -1,18 +1,35 @@
-# Configuracao manual — LembraLink POC
+<p align="center">
+  <img src="../extension/public/icons/icon.svg" width="72" alt="Ícone do LembraLink" />
+</p>
+
+# Configuração manual — LembraLink POC
 
 Este guia cria um ambiente isolado para uma pessoa usar a extensao: um projeto
 Supabase, uma chave Gemini e uma Edge Function propria. A instalacao da extensao
 baixada por Release esta no [README](../README.md).
 
-## Roteiro para quem quer usar a extensao
+> [!IMPORTANT]
+> Execute os itens na ordem. Os valores, usuários e chaves criados aqui devem
+> pertencer ao seu próprio projeto Supabase e Google AI Studio.
 
-1. Crie o projeto e o usuario proprietario no Supabase (itens 1 e 2).
+## Roteiro para quem quer usar a extensão
+
+| Etapa | Resultado |
+| --- | --- |
+| 1–2 | Projeto Supabase e usuário proprietário autenticado |
+| 3 | Banco, RLS, busca e rate limit ativos |
+| 4–5 | Gemini e Edge Function configurados |
+| 6 | Salvamento e busca validados |
+
+1. Crie o projeto e o usuário proprietário no Supabase (itens 1 e 2).
 2. Crie banco, RLS, busca e rate limit (item 3).
 3. Crie a chave Gemini e os secrets (item 4).
 4. Publique a Edge Function (item 5).
 5. Execute um teste de salvar e buscar (item 6).
 
-## Antes de comecar
+---
+
+## Antes de começar
 
 Voce precisara de uma conta no [Supabase](https://supabase.com/dashboard), uma
 conta no [Google AI Studio](https://aistudio.google.com/) e um email a que voce
@@ -26,8 +43,11 @@ mkdir -p ~/lembralink-poc
 cd ~/lembralink-poc
 ```
 
-Nunca coloque chaves Gemini, JWTs, refresh tokens, `service_role` ou arquivos
-de exportacao de favoritos no Git.
+> [!CAUTION]
+> Nunca coloque chaves Gemini, JWTs, refresh tokens, `service_role` ou arquivos
+> de exportação de favoritos no Git.
+
+---
 
 ## 1. Criar e preparar o projeto Supabase
 
@@ -49,7 +69,9 @@ export SB_PUBLISHABLE_KEY='sb_publishable_SEU_VALOR'
 export SB_EMAIL='seu-email@exemplo.com'
 ```
 
-## 2. Criar o usuario proprietario e obter um JWT
+---
+
+## 2. Criar o usuário proprietário e obter um JWT
 
 Envie o primeiro email, permitindo que a conta seja criada:
 
@@ -86,15 +108,23 @@ curl --fail-with-body -sS "$SB_URL/auth/v1/user" \
   -H "Authorization: Bearer $SB_ACCESS_TOKEN"
 ```
 
+---
+
 ## 3. Criar banco, RLS, busca e rate limit
 
 No **SQL Editor > New query**, abra [schema.sql](../supabase/schema.sql), copie
 todo o conteudo, cole no editor e clique **Run**. O arquivo ja cria a tabela,
 RLS, permissoes, busca vetorial, exclusao e registro de ultimo acesso.
 
+> [!TIP]
+> O SQL não deve ser ajustado para uma POC nova. Ele já cria exclusão, registro
+> de último acesso e as datas retornadas na busca.
+
 Confirme que existem as tabelas `bookmarks` e `bookmark_rate_limits`. Em
 **Database > Policies**, `bookmarks` deve ter RLS ativo e a politica criada pelo
 script.
+
+---
 
 ## 4. Criar chave Gemini e configurar secrets
 
@@ -112,6 +142,8 @@ script.
 
 Nao crie `SUPABASE_SERVICE_ROLE_KEY`. A funcao usa o JWT do usuario e RLS.
 
+---
+
 ## 5. Criar a Edge Function manualmente
 
 Em **Edge Functions > Deploy a new function**, use exatamente o nome
@@ -122,6 +154,8 @@ Depois, em **Function configuration**, desligue **Verify JWT with legacy
 secret** (em algumas telas: **Enforce JWT Verification**). A funcao valida o JWT
 por `supabase.auth.getUser()` antes de executar qualquer operacao e continua
 sujeita a RLS.
+
+---
 
 ## 6. Testar salvar e buscar
 
@@ -160,10 +194,13 @@ curl --fail-with-body -sS -X POST "$SB_URL/functions/v1/bookmark-service" \
 
 Espere HTTP `200`, o favorito em `results` e uma similaridade positiva.
 
-## 7. Validar seguranca e limites
+---
 
-Embora nao seja necessario para instalar e usar a extensao, e **importante**
-executar estes testes antes de considerar a POC aprovada:
+## 7. Validar segurança e limites
+
+> [!NOTE]
+> Embora não seja necessário para instalar e usar a extensão, é **importante**
+> executar estes testes antes de considerar a POC aprovada.
 
 1. Repita a busca sem `Authorization`: espere `401`.
 2. Com outro usuario autenticado, espere `403`, sem chamada ao Gemini.
@@ -215,6 +252,8 @@ for n in 1 2 3 4 5 6; do
 done
 ```
 
+---
+
 ## Encerramento seguro
 
 Ao terminar, apague os arquivos de sessao e de teste da pasta temporaria:
@@ -226,7 +265,9 @@ unset SB_URL SB_PUBLISHABLE_KEY SB_EMAIL SB_ACCESS_TOKEN SB_OWNER_USER_ID SB_CON
 
 Antes de trocar modelo ou dimensao de embedding, reindexe todos os favoritos.
 
-## Referencias oficiais
+---
+
+## Referências oficiais
 
 - [Gemini Embeddings](https://ai.google.dev/gemini-api/docs/embeddings)
 - [Gemini Structured Output](https://ai.google.dev/gemini-api/docs/structured-output)

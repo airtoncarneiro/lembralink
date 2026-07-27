@@ -1,38 +1,61 @@
-# LembraLink POC
+<p align="center">
+  <img src="extension/public/icons/icon.svg" width="96" alt="Ícone do LembraLink" />
+</p>
 
-Extensao Chrome para salvar paginas e reencontra-las por significado. Cada
-usuario configura o proprio projeto Supabase e a propria chave Gemini; nenhum
-segredo e distribuido com a extensao.
+<h1 align="center">LembraLink</h1>
+
+<p align="center">
+  Salve links agora. Reencontre-os pelo significado depois.
+</p>
+
+<p align="center">
+  <a href="docs/configuracao-manual.md"><strong>Configurar meu ambiente</strong></a>
+  &nbsp;·&nbsp;
+  <a href="#instalar-uma-versao-publicada">Instalar extensão</a>
+  &nbsp;·&nbsp;
+  <a href="#compilar-a-extensao-a-partir-do-codigo-fonte">Compilar código</a>
+</p>
+
+---
 
 ## Comece por aqui
 
-Para criar seu proprio ambiente, siga o [guia de configuracao manual](docs/configuracao-manual.md).
-Ele cobre, em ordem, Supabase Auth, banco com RLS, Gemini e Edge Function.
+| Seu objetivo | Caminho recomendado |
+| --- | --- |
+| Criar seu próprio Supabase e Gemini | Siga o [guia de configuração manual](docs/configuracao-manual.md). |
+| Apenas testar uma versão pronta | Baixe o ZIP de uma Release e siga os passos abaixo. |
+| Alterar o código da extensão | Clone o repositório e compile localmente. |
 
-## Instalar uma versao publicada
+O guia manual cobre Supabase Auth, banco com RLS, Gemini e Edge Function. Cada
+pessoa usa o próprio projeto e a própria chave Gemini.
 
-Quando houver uma versao em **Releases** deste repositorio:
+## Instalar uma versão publicada
 
-1. Baixe o arquivo `lembralink-extension-<versao>.zip` na secao **Assets**.
-2. Descompacte-o. A pasta resultante deve conter `manifest.json` diretamente.
-3. No Chrome, abra `chrome://extensions`, habilite **Modo do desenvolvedor** e
-   clique em **Carregar sem compactacao**.
-4. Selecione a pasta descompactada — nao o arquivo ZIP.
-5. Abra a extensao e informe a URL e a chave publishable do seu proprio
-   projeto Supabase.
-6. Informe o email proprietario, copie o link recebido por email sem abri-lo e
-   cole-o na extensao para entrar.
-7. Abra uma pagina publica, use **Salvar esta pagina** e depois teste uma busca.
+> [!TIP]
+> Este é o caminho para quem quer testar a extensão. Não requer Node.js nem
+> compilação.
 
-Esse modo e adequado para a POC. Uma versao nova exige baixar o ZIP novo,
-descompactar e recarregar a extensao. O pacote nunca contem chave Gemini, JWT,
-refresh token ou `service_role`.
+Quando houver uma versão em **Releases** deste repositório:
 
-## Compilar a extensao a partir do codigo-fonte
+1. Baixe `lembralink-extension-<versao>.zip` na seção **Assets**.
+2. Descompacte o arquivo. A pasta resultante deve conter `manifest.json`.
+3. No Chrome, abra `chrome://extensions` e habilite **Modo do desenvolvedor**.
+4. Clique em **Carregar sem compactação** e selecione a pasta descompactada —
+   não o arquivo ZIP.
+5. Abra o LembraLink e informe a URL e a chave publishable do seu Supabase.
+6. Informe o email proprietário, copie o link recebido por email sem abri-lo e
+   cole-o na extensão para entrar.
+7. Abra uma página pública, use **Salvar esta página** e depois faça uma busca.
 
-Esta secao e somente para quem clonou o repositorio e quer gerar uma versao
-local da extensao. Quem baixou o ZIP de uma Release nao precisa executar estes
-comandos.
+> [!NOTE]
+> Para atualizar, baixe o ZIP da nova versão, descompacte-o e recarregue a
+> extensão em `chrome://extensions`.
+
+## Compilar a extensão a partir do código-fonte
+
+> [!IMPORTANT]
+> Esta seção é somente para quem clonou o repositório e quer gerar uma versão
+> local. Quem baixou o ZIP de uma Release não precisa executar estes comandos.
 
 ```bash
 cd extension
@@ -40,20 +63,23 @@ npm install
 npm run build
 ```
 
-Depois carregue `extension/dist` no Chrome. A pasta `dist` e um artefato local:
-ela fica no seu disco, mas nao e enviada ao Git.
+Depois, carregue `extension/dist` no Chrome. A pasta `dist` é um artefato local:
+ela fica no seu disco, mas não é enviada ao Git.
 
-## Estrutura
+## Estrutura do repositório
 
 ```text
-docs/                 guia unico de configuracao manual
-supabase/             SQL e codigo da Edge Function copiados no Dashboard
-extension/            codigo-fonte da extensao Chrome
-extension/dist/       extensao compilada local (ignorada pelo Git)
+docs/                 guia único de configuração manual
+supabase/             SQL e Edge Function copiados no Dashboard
+extension/            código-fonte da extensão Chrome
+extension/dist/       extensão compilada local (ignorada pelo Git)
 ```
 
-## Seguranca
+## Segurança
 
-Nao inclua no repositorio chaves Gemini, arquivos `.env`, sessoes, exports de
-favoritos ou texto de paginas privadas. Consulte a secao de encerramento seguro
-no [guia de configuracao](docs/configuracao-manual.md).
+> [!CAUTION]
+> Nunca inclua no repositório chaves Gemini, arquivos `.env`, sessões, exports
+> de favoritos ou texto de páginas privadas.
+
+Consulte o [encerramento seguro](docs/configuracao-manual.md#encerramento-seguro)
+ao terminar os testes.
