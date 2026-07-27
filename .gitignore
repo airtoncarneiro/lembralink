@@ -1,0 +1,15 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+session*.json
+other-session.json
+bookmarks-export.json
+page.txt
+
+extension/node_modules/
+extension/dist/
+extension/.env
+*.log
+coverage/
+*.tsbuildinfo

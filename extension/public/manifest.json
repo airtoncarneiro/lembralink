@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Smart Bookmarks POC",
+  "version": "0.1.4",
+  "description": "Salve e encontre favoritos por significado.",
+  "action": {
+    "default_title": "Smart Bookmarks",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "optional_host_permissions": ["https://*.supabase.co/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://*.supabase.co"
+  }
+}

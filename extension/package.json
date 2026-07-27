@@ -1,0 +1,19 @@
+{
+  "name": "smart-bookmarks-extension",
+  "version": "0.1.4",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm run typecheck && node scripts/build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "@supabase/supabase-js": "^2.57.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.320",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0"
+  }
+}
