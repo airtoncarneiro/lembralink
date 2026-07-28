@@ -52,6 +52,12 @@ button:active:not(:disabled) { transform: translateY(1px); }
 button:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 38%, transparent); outline-offset: 2px; }
 button.secondary { padding: 7px 8px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 650; }
 button.secondary:hover:not(:disabled) { background: var(--surface-soft); color: var(--text); }
+.tabs { display: flex; gap: 4px; margin: 18px 0; border-bottom: 1px solid var(--border); }
+.tabs .secondary { border-radius: 8px 8px 0 0; padding: 8px 10px; }
+.tabs .secondary.active { background: var(--surface-soft); color: var(--text); }
+.mode { border: 1px solid var(--border); border-radius: 10px; margin: 18px 0; padding: 8px 12px; }
+.mode label { display: inline-flex; align-items: center; gap: 5px; margin: 6px 14px 6px 0; }
+.mode input { width: auto; }
 button.danger { background: transparent; color: var(--muted); font-size: 11px; font-weight: 650; padding: 3px 0 3px 8px; }
 button.danger:hover:not(:disabled) { color: var(--danger); background: transparent; }
 button:disabled { cursor: wait; opacity: .58; }
