@@ -4,6 +4,11 @@
 
 # Configuração manual — LembraLink POC
 
+> A configuração deste guia é necessária apenas para o modo **Online**. O modo
+> **Local** funciona sem Supabase, Gemini, conta ou chave, mas seus favoritos
+> permanecem somente no perfil atual do navegador e não sincronizam entre
+> máquinas.
+
 Este guia cria um ambiente isolado para uma pessoa usar a extensao: um projeto
 Supabase, uma chave Gemini e uma Edge Function propria. A instalacao da extensao
 baixada por Release esta no [README](../README.md).

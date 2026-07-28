@@ -20,9 +20,14 @@ export type Bookmark = {
   last_accessed_at?: string | null;
   indexed_at?: string;
 };
+export type UsageMode = "local" | "online";
+export type ImportCandidate = { title: string; url: string };
+export type ImportProgress = { total: number; pending: number; processing: number; saved: number; failed: number; currentUrl: string | null; done: boolean; errors: string[] };
 
 export type RequestMessage =
   | { type: "settings.get" }
+  | { type: "mode.get" }
+  | { type: "mode.set"; mode: UsageMode }
   | { type: "settings.save"; supabaseUrl: string; publishableKey: string; minSimilarity: number; maxResults: number }
   | { type: "auth.sendOtp"; email: string }
   | { type: "auth.verifyOtp"; email: string; token: string }
@@ -32,6 +37,9 @@ export type RequestMessage =
   | { type: "bookmark.save"; tabId: number }
   | { type: "bookmark.search"; query: string; limit: number }
   | { type: "bookmark.access"; id: string }
-  | { type: "bookmark.delete"; id: string };
+  | { type: "bookmark.delete"; id: string }
+  | { type: "bookmark.clear" }
+  | { type: "import.start"; items: ImportCandidate[] }
+  | { type: "import.status" };
 
 export type ResponseMessage<T = unknown> = { ok: true; data: T } | { ok: false; error: string };

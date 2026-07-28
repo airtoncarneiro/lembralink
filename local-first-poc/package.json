@@ -1,0 +1,19 @@
+{
+  "name": "lembralink-local-first-poc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm run typecheck && node scripts/build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "@mozilla/readability": "^0.6.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.320",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0"
+  }
+}

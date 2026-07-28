@@ -1,100 +1,35 @@
-import { getRuntimeConfig, normalizeSupabaseUrl, saveRuntimeConfig } from "./config";
+import { getRuntimeConfig, getUsageMode, normalizeSupabaseUrl, saveRuntimeConfig, saveUsageMode } from "./config";
+import { clearLocal, deleteLocal, saveLocal, searchLocal, touchLocal } from "./local-db";
 import { createSupabaseClient } from "./supabase";
 import type { EmailOtpType } from "@supabase/supabase-js";
-import type { ExtractedPage, RequestMessage, ResponseMessage } from "./types";
+import type { ExtractedPage, ImportCandidate, ImportProgress, RequestMessage, ResponseMessage } from "./types";
 
-async function respond<T>(operation: () => Promise<T>): Promise<ResponseMessage<T>> {
-  try { return { ok: true, data: await operation() }; }
-  catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Operacao nao concluida" }; }
-}
-
-async function getSupabase() {
-  const config = await getRuntimeConfig();
-  if (!config) throw new Error("Configure seu projeto Supabase antes de entrar.");
-  return createSupabaseClient(config);
-}
-
-async function requireSession() {
-  const supabase = await getSupabase();
-  const { data, error } = await supabase.auth.getSession();
-  if (error || !data.session) throw new Error("Sessao expirada; entre novamente.");
-  return { supabase, session: data.session };
-}
-
-async function invoke<T>(body: Record<string, unknown>) {
-  const { supabase } = await requireSession();
-  const { data, error } = await supabase.functions.invoke("bookmark-service", { body });
-  if (error) throw new Error("O servico de favoritos nao respondeu. Tente novamente.");
-  return data as T;
-}
-
-async function extractFromTab(tabId: number): Promise<ExtractedPage> {
-  try { await chrome.tabs.sendMessage(tabId, { type: "content.ping" }); }
-  catch { await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] }); }
-  const response = await chrome.tabs.sendMessage(tabId, { type: "content.extract" }) as ResponseMessage<ExtractedPage>;
-  if (!response?.ok) throw new Error(response?.error ?? "Nao foi possivel ler esta pagina.");
-  return response.data;
-}
-
+const IMPORT_KEY = "lembralink.importProgress";
+async function respond<T>(operation: () => Promise<T>): Promise<ResponseMessage<T>> { try { return { ok: true, data: await operation() }; } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Operação não concluída" }; } }
+async function getSupabase() { const config = await getRuntimeConfig(); if (!config) throw new Error("Configure o Supabase para usar o modo online."); return createSupabaseClient(config); }
+async function requireSession() { const supabase = await getSupabase(); const { data, error } = await supabase.auth.getSession(); if (error || !data.session) throw new Error("Sessão expirada; entre novamente."); return supabase; }
+async function invoke<T>(body: Record<string, unknown>) { const supabase = await requireSession(); const { data, error } = await supabase.functions.invoke("bookmark-service", { body }); if (error) throw new Error("O serviço de favoritos não respondeu."); return data as T; }
+async function extract(tabId: number): Promise<ExtractedPage> { try { await chrome.tabs.sendMessage(tabId, { type: "content.ping" }); } catch { await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] }); } const result = await chrome.tabs.sendMessage(tabId, { type: "content.extract" }) as ResponseMessage<ExtractedPage>; if (!result.ok) throw new Error(result.error); return result.data; }
+async function embed(text: string) { if (!await chrome.offscreen.hasDocument()) await chrome.offscreen.createDocument({ url: "offscreen.html", reasons: [chrome.offscreen.Reason.WORKERS], justification: "Gerar embeddings locais." }); const result = await chrome.runtime.sendMessage({ target: "offscreen", type: "local.embed", text }) as ResponseMessage<number[]>; if (!result.ok) throw new Error(result.error); return result.data; }
+async function savePage(page: ExtractedPage) { if (await getUsageMode() === "online") return invoke({ action: "save", ...page }); return saveLocal(page, await embed(`${page.title}\n${page.description ?? ""}\n${page.content}`)); }
+async function status() { return (await chrome.storage.local.get(IMPORT_KEY))[IMPORT_KEY] as ImportProgress | undefined ?? { total: 0, pending: 0, processing: 0, saved: 0, failed: 0, currentUrl: null, done: true, errors: [] }; }
+async function saveStatus(value: ImportProgress) { await chrome.storage.local.set({ [IMPORT_KEY]: value }); }
+async function batch(items: ImportCandidate[]) { const activeMode = await getUsageMode(); let progress: ImportProgress = { total: items.length, pending: items.length, processing: 0, saved: 0, failed: 0, currentUrl: null, done: false, errors: [] }; await saveStatus(progress); for (const item of items) { progress = { ...progress, pending: progress.pending - 1, processing: 1, currentUrl: item.url }; await saveStatus(progress); let tabId: number | undefined; try { const tab = await chrome.tabs.create({ url: item.url, active: false }); tabId = tab.id; if (!tabId) throw new Error("Não foi possível abrir a página."); await new Promise((resolve) => setTimeout(resolve, 1_000)); await savePage(await extract(tabId)); progress = { ...progress, processing: 0, saved: progress.saved + 1 }; } catch (error) { progress = { ...progress, processing: 0, failed: progress.failed + 1, errors: [...progress.errors, `${item.title}: ${error instanceof Error ? error.message : "falha"}`] }; } finally { if (tabId) await chrome.tabs.remove(tabId).catch(() => undefined); await saveStatus(progress); } if (activeMode === "online" && progress.pending) await new Promise((resolve) => setTimeout(resolve, 13_000)); } await saveStatus({ ...progress, currentUrl: null, done: true }); }
 async function handle(message: RequestMessage): Promise<ResponseMessage> {
-  if (message.type === "settings.get") return respond(async () => getRuntimeConfig());
-  if (message.type === "settings.save") return respond(async () => {
-    const origin = normalizeSupabaseUrl(message.supabaseUrl);
-    const allowed = await chrome.permissions.contains({ origins: [`${origin}/*`] });
-    if (!allowed) throw new Error("Autorize o acesso ao dominio do seu Supabase para continuar.");
-    const previous = await getRuntimeConfig();
-    const config = await saveRuntimeConfig({
-      supabaseUrl: origin,
-      publishableKey: message.publishableKey,
-      minSimilarity: message.minSimilarity,
-      maxResults: message.maxResults,
-    });
-    if (previous && previous.supabaseUrl !== origin) {
-      await chrome.permissions.remove({ origins: [`${previous.supabaseUrl}/*`] });
-    }
-    return config;
-  });
-
-  if (message.type === "auth.sendOtp") return respond(async () => {
-    const supabase = await getSupabase();
-    const { error } = await supabase.auth.signInWithOtp({ email: message.email, options: { shouldCreateUser: false } });
-    if (error) throw error;
-    return null;
-  });
-  if (message.type === "auth.verifyOtp") return respond(async () => {
-    const supabase = await getSupabase();
-    const { data, error } = await supabase.auth.verifyOtp({ email: message.email, token: message.token, type: "email" });
-    if (error || !data.session) throw error ?? new Error("Codigo invalido ou expirado.");
-    return { email: data.user?.email ?? message.email };
-  });
-  if (message.type === "auth.verifyMagicLink") return respond(async () => {
-    const config = await getRuntimeConfig();
-    if (!config) throw new Error("Configure seu projeto Supabase antes de entrar.");
-    const link = new URL(message.link.trim());
-    if (link.origin !== config.supabaseUrl || link.pathname !== "/auth/v1/verify") {
-      throw new Error("Cole o link de login enviado pelo seu projeto Supabase.");
-    }
-    const tokenHash = link.searchParams.get("token");
-    const type = link.searchParams.get("type");
-    if (!tokenHash || !type) throw new Error("O link nao contem um token de login valido.");
-    const supabase = createSupabaseClient(config);
-    const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: type as EmailOtpType });
-    if (error || !data.session) throw error ?? new Error("Link invalido ou expirado.");
-    return { email: data.user?.email ?? "" };
-  });
-  if (message.type === "auth.session") return respond(async () => {
-    const { session } = await requireSession();
-    return { email: session.user.email ?? "" };
-  });
-  if (message.type === "auth.signOut") return respond(async () => { const supabase = await getSupabase(); await supabase.auth.signOut(); return null; });
-  if (message.type === "bookmark.save") return respond(async () => invoke({ action: "save", ...await extractFromTab(message.tabId) }));
-  if (message.type === "bookmark.search") return respond(async () => invoke({ action: "search", query: message.query, limit: message.limit }));
-  if (message.type === "bookmark.access") return respond(async () => invoke({ action: "access", id: message.id }));
-  if (message.type === "bookmark.delete") return respond(async () => invoke({ action: "delete", id: message.id }));
+  if (message.type === "mode.get") return respond(getUsageMode); if (message.type === "mode.set") return respond(() => saveUsageMode(message.mode));
+  if (message.type === "settings.get") return respond(getRuntimeConfig);
+  if (message.type === "settings.save") return respond(async () => { const origin = normalizeSupabaseUrl(message.supabaseUrl); if (!await chrome.permissions.contains({ origins: [`${origin}/*`] })) throw new Error("Autorize o domínio do Supabase."); return saveRuntimeConfig(message); });
+  if (message.type === "auth.sendOtp") return respond(async () => { const { error } = await (await getSupabase()).auth.signInWithOtp({ email: message.email, options: { shouldCreateUser: false } }); if (error) throw error; return null; });
+  if (message.type === "auth.verifyOtp") return respond(async () => { const { data, error } = await (await getSupabase()).auth.verifyOtp({ token: message.token, email: message.email, type: "email" }); if (error || !data.session) throw error ?? new Error("Código inválido."); return { email: data.user?.email ?? message.email }; });
+  if (message.type === "auth.verifyMagicLink") return respond(async () => { const config = await getRuntimeConfig(); if (!config) throw new Error("Configuração ausente."); const link = new URL(message.link); if (link.origin !== config.supabaseUrl) throw new Error("Use o link do seu Supabase."); const { data, error } = await createSupabaseClient(config).auth.verifyOtp({ token_hash: link.searchParams.get("token") ?? "", type: link.searchParams.get("type") as EmailOtpType }); if (error || !data.session) throw error ?? new Error("Link inválido."); return { email: data.user?.email ?? "" }; });
+  if (message.type === "auth.session") return respond(async () => { const { data } = await (await getSupabase()).auth.getSession(); if (!data.session) throw new Error("Sem sessão."); return { email: data.session.user.email ?? "" }; }); if (message.type === "auth.signOut") return respond(async () => { await (await getSupabase()).auth.signOut(); return null; });
+  if (message.type === "bookmark.save") return respond(() => extract(message.tabId).then(savePage));
+  if (message.type === "bookmark.search") return respond(async () => await getUsageMode() === "online" ? invoke({ action: "search", query: message.query, limit: message.limit }) : { results: await searchLocal(await embed(message.query), message.limit) });
+  if (message.type === "bookmark.access") return respond(async () => await getUsageMode() === "online" ? invoke({ action: "access", id: message.id }) : touchLocal(message.id));
+  if (message.type === "bookmark.delete") return respond(async () => await getUsageMode() === "online" ? invoke({ action: "delete", id: message.id }) : deleteLocal(message.id));
+  if (message.type === "bookmark.clear") return respond(async () => await getUsageMode() === "online" ? invoke({ action: "clear" }) : clearLocal());
+  if (message.type === "import.status") return respond(status);
+  if (message.type === "import.start") return respond(async () => { void batch(message.items); return status(); });
   return { ok: false, error: "Mensagem desconhecida." };
 }
-
-chrome.runtime.onMessage.addListener((message: RequestMessage, _sender, sendResponse) => {
-  void handle(message).then(sendResponse);
-  return true;
-});
+chrome.runtime.onMessage.addListener((message: RequestMessage, _sender, sendResponse) => { void handle(message).then(sendResponse); return true; });

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LembraLink POC",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Salve links e reencontre-os por significado.",
   "action": {
     "default_title": "LembraLink",
@@ -23,9 +23,10 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["activeTab", "scripting", "storage"],
-  "optional_host_permissions": ["https://*.supabase.co/*"],
+  "permissions": ["activeTab", "scripting", "storage", "unlimitedStorage", "offscreen", "alarms"],
+  "host_permissions": ["https://huggingface.co/*", "https://cdn-lfs.hf.co/*", "https://cdn-lfs-us-1.hf.co/*", "https://*.cdn.hf.co/*", "https://*.xethub.hf.co/*"],
+  "optional_host_permissions": ["https://*.supabase.co/*", "<all_urls>"],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://*.supabase.co"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://*.supabase.co https://huggingface.co https://cdn-lfs.hf.co https://cdn-lfs-us-1.hf.co https://*.cdn.hf.co https://*.xethub.hf.co; worker-src 'self'"
   }
 }

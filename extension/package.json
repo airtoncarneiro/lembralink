@@ -1,6 +1,6 @@
 {
   "name": "lembralink-extension",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@mozilla/readability": "^0.6.0",
     "@supabase/supabase-js": "^2.57.0"
   },

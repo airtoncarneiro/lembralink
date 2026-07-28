@@ -5,7 +5,10 @@ export type RuntimeConfig = {
   maxResults: number;
 };
 
+import type { UsageMode } from "./types";
+
 const CONFIG_KEY = "smartBookmarks.runtimeConfig";
+const MODE_KEY = "smartBookmarks.usageMode";
 export const DEFAULT_MIN_SIMILARITY = 0.55;
 export const DEFAULT_MAX_RESULTS = 10;
 
@@ -54,3 +57,9 @@ export async function saveRuntimeConfig(value: RuntimeConfig) {
   await chrome.storage.local.set({ [CONFIG_KEY]: config });
   return config;
 }
+
+export async function getUsageMode(): Promise<UsageMode> {
+  const stored = await chrome.storage.local.get(MODE_KEY);
+  return stored[MODE_KEY] === "online" ? "online" : "local";
+}
+export async function saveUsageMode(mode: UsageMode) { await chrome.storage.local.set({ [MODE_KEY]: mode }); return mode; }

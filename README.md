@@ -29,6 +29,18 @@
 O guia manual cobre Supabase Auth, banco com RLS, Gemini e Edge Function. Cada
 pessoa usa o próprio projeto e a própria chave Gemini.
 
+## Modos de uso
+
+Ao abrir a extensão, escolha um dos modos. **Local** é o caminho mais simples:
+não exige conta, Supabase ou chave e processa os favoritos no navegador. Os
+dados não são sincronizados para outro perfil ou computador. **Online** usa o
+Supabase e Gemini configurados manualmente e mantém o fluxo de login e busca
+remota já existente. Alternar o modo não mistura nem apaga as duas coleções.
+
+Nos dois modos é possível importar um HTML exportado pelo Chrome. A extensão
+abre os links em segundo plano, um por vez, e mostra o andamento. No modo
+online a importação respeita o limite de chamadas configurado na Edge Function.
+
 ## Instalar uma versão publicada
 
 > [!TIP]

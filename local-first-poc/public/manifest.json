@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "LembraLink Local-first POC",
+  "version": "0.1.0",
+  "description": "Protótipo local de favoritos com busca semântica no navegador.",
+  "action": { "default_title": "LembraLink Local-first", "default_popup": "popup.html" },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "permissions": ["activeTab", "scripting", "unlimitedStorage", "offscreen", "alarms"],
+  "optional_host_permissions": ["<all_urls>"],
+  "host_permissions": ["https://huggingface.co/*", "https://cdn-lfs.hf.co/*", "https://cdn-lfs-us-1.hf.co/*", "https://*.cdn.hf.co/*", "https://*.xethub.hf.co/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://huggingface.co https://cdn-lfs.hf.co https://cdn-lfs-us-1.hf.co https://*.cdn.hf.co https://*.xethub.hf.co; worker-src 'self'"
+  }
+}

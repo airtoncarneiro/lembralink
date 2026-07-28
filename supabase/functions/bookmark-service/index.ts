@@ -9,7 +9,8 @@ const searchSchema = z.object({ action: z.literal("search"), query: z.string().t
 const exportSchema = z.object({ action: z.literal("export") });
 const accessSchema = z.object({ action: z.literal("access"), id: z.string().uuid() });
 const deleteSchema = z.object({ action: z.literal("delete"), id: z.string().uuid() });
-const requestSchema = z.discriminatedUnion("action", [saveSchema, searchSchema, exportSchema, accessSchema, deleteSchema]);
+const clearSchema = z.object({ action: z.literal("clear") });
+const requestSchema = z.discriminatedUnion("action", [saveSchema, searchSchema, exportSchema, accessSchema, deleteSchema, clearSchema]);
 const attributesSchema = z.object({ summary: z.string().trim().min(1).max(1500), category: z.string().trim().min(1).max(80), pageType: z.string().trim().min(1).max(80), tags: z.array(z.string().trim().min(1).max(40)).max(10) });
 const attributesJsonSchema = { type: "object", additionalProperties: false, properties: { summary: { type: "string", maxLength: 1500 }, category: { type: "string", maxLength: 80 }, pageType: { type: "string", maxLength: 80 }, tags: { type: "array", maxItems: 10, items: { type: "string", maxLength: 40 } } }, required: ["summary", "category", "pageType", "tags"] };
 
@@ -92,6 +93,11 @@ export default { fetch: async (req: Request) => {
       const { data, error } = await supabase.from("bookmarks").delete().eq("id", body.id).select("id").maybeSingle();
       if (error) throw error; if (!data) return json({ code: "NOT_FOUND", requestId }, 404);
       return json({ deletedId: data.id, requestId });
+    }
+    if (body.action === "clear") {
+      const { data, error } = await supabase.from("bookmarks").delete().select("id");
+      if (error) throw error;
+      return json({ deletedCount: data?.length ?? 0, requestId });
     }
     if (body.action === "access") {
       const { data, error } = await supabase.from("bookmarks").update({ last_accessed_at: new Date().toISOString() }).eq("id", body.id).select("id,last_accessed_at").maybeSingle();
