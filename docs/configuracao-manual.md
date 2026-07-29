@@ -2,7 +2,7 @@
   <img src="../extension/public/icons/icon.svg" width="72" alt="Ícone do LembraLink" />
 </p>
 
-# Configuração manual — LembraLink POC
+# Configuração do modo Online — LembraLink POC
 
 > A configuração deste guia é necessária apenas para o modo **Online**. O modo
 > **Local** funciona sem Supabase, Gemini, conta ou chave, mas seus favoritos
@@ -10,27 +10,28 @@
 > máquinas.
 
 Este guia cria um ambiente isolado para uma pessoa usar a extensao: um projeto
-Supabase, uma chave Gemini e uma Edge Function propria. A instalacao da extensao
-baixada por Release esta no [README](../README.md).
+Supabase, uma chave Gemini e uma Edge Function propria. O caminho recomendado
+usa apenas o Dashboard do Supabase e a própria extensão; os comandos de terminal
+ficam em uma seção avançada, para testes e diagnóstico. A instalação da extensão
+baixada por Release está no [README](../README.md).
 
 > [!IMPORTANT]
 > Execute os itens na ordem. Os valores, usuários e chaves criados aqui devem
 > pertencer ao seu próprio projeto Supabase e Google AI Studio.
 
-## Roteiro para quem quer usar a extensão
+## Roteiro recomendado: sem terminal
 
 | Etapa | Resultado |
 | --- | --- |
-| 1–2 | Projeto Supabase e usuário proprietário autenticado |
-| 3 | Banco, RLS, busca e rate limit ativos |
-| 4–5 | Gemini e Edge Function configurados |
-| 6 | Salvamento e busca validados |
+| 1 | Projeto, usuário proprietário e dados para a extensão |
+| 2 | Banco, RLS, busca e rate limit ativos |
+| 3–4 | Gemini e Edge Function configurados |
+| 5 | Extensão conectada e login realizado |
 
-1. Crie o projeto e o usuário proprietário no Supabase (itens 1 e 2).
-2. Crie banco, RLS, busca e rate limit (item 3).
-3. Crie a chave Gemini e os secrets (item 4).
-4. Publique a Edge Function (item 5).
-5. Execute um teste de salvar e buscar (item 6).
+1. Crie o projeto e o usuário proprietário no Dashboard do Supabase (item 1).
+2. Crie banco, RLS, busca e rate limit (item 2).
+3. Crie a chave Gemini, os secrets e publique a Edge Function (itens 3 e 4).
+4. Instale, conecte e entre na extensão (item 5).
 
 ---
 
@@ -38,15 +39,7 @@ baixada por Release esta no [README](../README.md).
 
 Voce precisara de uma conta no [Supabase](https://supabase.com/dashboard), uma
 conta no [Google AI Studio](https://aistudio.google.com/) e um email a que voce
-tenha acesso. No macOS, `curl` e `python3` ja estao disponiveis.
-
-Crie uma pasta local temporaria para os comandos abaixo. Ela nao pertence ao
-repositorio e pode conter tokens temporarios:
-
-```bash
-mkdir -p ~/lembralink-poc
-cd ~/lembralink-poc
-```
+tenha acesso. Para o roteiro recomendado, nao e necessario usar terminal.
 
 > [!CAUTION]
 > Nunca coloque chaves Gemini, JWTs, refresh tokens, `service_role` ou arquivos
@@ -54,68 +47,30 @@ cd ~/lembralink-poc
 
 ---
 
-## 1. Criar e preparar o projeto Supabase
+## 1. Criar projeto e usuário proprietário no Supabase
 
 1. No Supabase, escolha **New project**, defina nome e senha de banco e espere
    o projeto ficar saudavel.
 2. Em **Project Settings > API**, copie a **Project URL**
    (`https://<project-ref>.supabase.co`) e a chave **Publishable**
    (`sb_publishable_...`).
-3. Em **Authentication > Providers**, deixe **Email** habilitado e permita
-   novos cadastros ate criar o primeiro usuario.
-4. Nao e necessario configurar uma opcao separada chamada Magic Link. O email
-   padrao contem um link de confirmacao/acesso; basta copia-lo quando solicitado.
+3. Em **Authentication > Providers**, deixe **Email** habilitado. Se houver
+   uma opção para permitir novos cadastros, deixe-a ligada apenas enquanto cria
+   o primeiro usuário.
+4. Abra **Authentication > Users**, escolha **Add user** e crie o usuário com
+   o email que usará a extensão. Se a tela oferecer essa opção, marque o email
+   como confirmado.
+5. Abra os detalhes desse usuário e copie seu **UUID**. Ele será o valor de
+   `OWNER_USER_ID` no próximo passo.
+6. Depois de criar esse usuário, desabilite novos cadastros no provedor Email,
+   se a opção estiver disponível.
 
-Defina estas variaveis somente no terminal atual:
-
-```bash
-export SB_URL='https://SEU_PROJECT_REF.supabase.co'
-export SB_PUBLISHABLE_KEY='sb_publishable_SEU_VALOR'
-export SB_EMAIL='seu-email@exemplo.com'
-```
-
----
-
-## 2. Criar o usuário proprietário e obter um JWT
-
-Envie o primeiro email, permitindo que a conta seja criada:
-
-```bash
-curl --fail-with-body -sS -X POST "$SB_URL/auth/v1/otp" \
-  -H "apikey: $SB_PUBLISHABLE_KEY" \
-  -H 'Content-Type: application/json' \
-  --data "{\"email\":\"$SB_EMAIL\",\"create_user\":true}"
-```
-
-Nao abra o link recebido. Copie-o e cole no comando abaixo; ele extrai o token
-localmente e grava a sessao em `session.json`:
-
-```bash
-read -r 'SB_MAGIC_LINK?Cole o link recebido por email: '
-export SB_TOKEN_HASH="$(python3 -c 'import sys, urllib.parse as u; print(u.parse_qs(u.urlparse(sys.argv[1]).query)["token"][0])' "$SB_MAGIC_LINK")"
-export SB_VERIFY_TYPE="$(python3 -c 'import sys, urllib.parse as u; print(u.parse_qs(u.urlparse(sys.argv[1]).query)["type"][0])' "$SB_MAGIC_LINK")"
-curl --fail-with-body -sS -X POST "$SB_URL/auth/v1/verify" \
-  -H "apikey: $SB_PUBLISHABLE_KEY" \
-  -H 'Content-Type: application/json' \
-  --data "{\"token_hash\":\"$SB_TOKEN_HASH\",\"type\":\"$SB_VERIFY_TYPE\"}" > session.json
-unset SB_MAGIC_LINK SB_TOKEN_HASH SB_VERIFY_TYPE
-export SB_ACCESS_TOKEN="$(python3 -c 'import json; print(json.load(open("session.json"))["access_token"])')"
-export SB_OWNER_USER_ID="$(python3 -c 'import json; print(json.load(open("session.json"))["user"]["id"])')"
-chmod 600 session.json
-```
-
-Confirme a sessao e, depois, desabilite novos cadastros em
-**Authentication > Providers > Email**:
-
-```bash
-curl --fail-with-body -sS "$SB_URL/auth/v1/user" \
-  -H "apikey: $SB_PUBLISHABLE_KEY" \
-  -H "Authorization: Bearer $SB_ACCESS_TOKEN"
-```
+Guarde estes três valores: **Project URL**, **Publishable key** e o **UUID do
+usuário proprietário**. Não use nem compartilhe a chave `service_role`.
 
 ---
 
-## 3. Criar banco, RLS, busca e rate limit
+## 2. Criar banco, RLS, busca e rate limit
 
 No **SQL Editor > New query**, abra [schema.sql](../supabase/schema.sql), copie
 todo o conteudo, cole no editor e clique **Run**. O arquivo ja cria a tabela,
@@ -131,7 +86,7 @@ script.
 
 ---
 
-## 4. Criar chave Gemini e configurar secrets
+## 3. Criar chave Gemini e configurar secrets
 
 1. No [Google AI Studio](https://aistudio.google.com/app/apikey), crie uma
    chave de API e copie-a.
@@ -140,7 +95,7 @@ script.
 | Nome | Valor |
 | --- | --- |
 | `GEMINI_API_KEY` | chave criada no AI Studio |
-| `OWNER_USER_ID` | valor de `SB_OWNER_USER_ID` |
+| `OWNER_USER_ID` | UUID copiado em **Authentication > Users** |
 | `RATE_LIMIT_SAVE_PER_MINUTE` | `5` |
 | `RATE_LIMIT_SEARCH_PER_MINUTE` | `15` |
 | `RATE_LIMIT_ACCESS_PER_MINUTE` | `60` |
@@ -149,7 +104,7 @@ Nao crie `SUPABASE_SERVICE_ROLE_KEY`. A funcao usa o JWT do usuario e RLS.
 
 ---
 
-## 5. Criar a Edge Function manualmente
+## 4. Criar a Edge Function no Dashboard
 
 Em **Edge Functions > Deploy a new function**, use exatamente o nome
 `bookmark-service`. Abra [index.ts](../supabase/functions/bookmark-service/index.ts),
@@ -162,7 +117,68 @@ sujeita a RLS.
 
 ---
 
-## 6. Testar salvar e buscar
+## 5. Instalar, configurar e entrar na extensão
+
+1. Siga os passos de instalação no [README](../README.md#instalar-uma-versao-publicada).
+2. Abra o LembraLink, selecione o modo **Online** e informe a **Project URL** e
+   a **Publishable key** guardadas no item 1.
+3. Autorize o domínio do Supabase quando o Chrome solicitar.
+4. Informe o email do usuário proprietário. A extensão enviará um código ou um
+   link de acesso; copie o código ou o link e cole-o no campo da extensão.
+5. Abra uma página pública, clique em **Salvar esta página** e pesquise por
+   uma expressão relacionada para confirmar que o modo online está funcionando.
+
+> [!TIP]
+> A extensão entra somente em usuários já existentes. Se aparecer
+> `403 FORBIDDEN`, confira se o UUID configurado em `OWNER_USER_ID` é o do mesmo
+> usuário que acabou de entrar.
+
+---
+
+## 6. Validação avançada pelo terminal (opcional)
+
+Esta seção não é necessária para usar a extensão. Use-a apenas para testar a
+API, JWT, RLS e limites de forma isolada.
+
+Crie uma pasta local temporária, que pode conter tokens de curta duração:
+
+```bash
+mkdir -p ~/lembralink-poc
+cd ~/lembralink-poc
+export SB_URL='https://SEU_PROJECT_REF.supabase.co'
+export SB_PUBLISHABLE_KEY='sb_publishable_SEU_VALOR'
+export SB_EMAIL='seu-email@exemplo.com'
+```
+
+Para obter uma sessão de teste, envie o email de acesso e copie o link recebido
+sem abri-lo:
+
+```bash
+curl --fail-with-body -sS -X POST "$SB_URL/auth/v1/otp" \
+  -H "apikey: $SB_PUBLISHABLE_KEY" \
+  -H 'Content-Type: application/json' \
+  --data "{\"email\":\"$SB_EMAIL\",\"create_user\":false}"
+read -r 'SB_MAGIC_LINK?Cole o link recebido por email: '
+export SB_TOKEN_HASH="$(python3 -c 'import sys, urllib.parse as u; print(u.parse_qs(u.urlparse(sys.argv[1]).query)["token"][0])' "$SB_MAGIC_LINK")"
+export SB_VERIFY_TYPE="$(python3 -c 'import sys, urllib.parse as u; print(u.parse_qs(u.urlparse(sys.argv[1]).query)["type"][0])' "$SB_MAGIC_LINK")"
+curl --fail-with-body -sS -X POST "$SB_URL/auth/v1/verify" \
+  -H "apikey: $SB_PUBLISHABLE_KEY" \
+  -H 'Content-Type: application/json' \
+  --data "{\"token_hash\":\"$SB_TOKEN_HASH\",\"type\":\"$SB_VERIFY_TYPE\"}" > session.json
+unset SB_MAGIC_LINK SB_TOKEN_HASH SB_VERIFY_TYPE
+export SB_ACCESS_TOKEN="$(python3 -c 'import json; print(json.load(open("session.json"))["access_token"])')"
+chmod 600 session.json
+```
+
+Confirme a sessão antes dos testes:
+
+```bash
+curl --fail-with-body -sS "$SB_URL/auth/v1/user" \
+  -H "apikey: $SB_PUBLISHABLE_KEY" \
+  -H "Authorization: Bearer $SB_ACCESS_TOKEN"
+```
+
+### Salvar e buscar pela API
 
 Crie um texto publico com ao menos 200 caracteres:
 
@@ -221,9 +237,9 @@ curl -i -sS -X POST "$SB_URL/functions/v1/bookmark-service" \
   --data '{"action":"search","query":"formato colunar"}'
 ```
 
-**Outro usuario (`403`):** habilite temporariamente novos cadastros, repita o
-item 2 usando outro email e guarde o token em `SB_OTHER_ACCESS_TOKEN`. Em
-seguida, desabilite os cadastros novamente e execute:
+**Outro usuario (`403`):** habilite temporariamente novos cadastros, crie ou
+autentique outro usuário e guarde o token em `SB_OTHER_ACCESS_TOKEN`. Em seguida,
+desabilite os cadastros novamente e execute:
 
 ```bash
 curl -i -sS -X POST "$SB_URL/functions/v1/bookmark-service" \
@@ -265,7 +281,7 @@ Ao terminar, apague os arquivos de sessao e de teste da pasta temporaria:
 
 ```bash
 rm -f session.json page.txt
-unset SB_URL SB_PUBLISHABLE_KEY SB_EMAIL SB_ACCESS_TOKEN SB_OWNER_USER_ID SB_CONTENT_JSON
+unset SB_URL SB_PUBLISHABLE_KEY SB_EMAIL SB_ACCESS_TOKEN SB_CONTENT_JSON
 ```
 
 Antes de trocar modelo ou dimensao de embedding, reindexe todos os favoritos.

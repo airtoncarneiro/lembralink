@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/configuracao-manual.md"><strong>Configurar meu ambiente</strong></a>
+  <a href="docs/configuracao-manual.md#roteiro-recomendado-sem-terminal"><strong>Configurar meu ambiente</strong></a>
   &nbsp;·&nbsp;
   <a href="#instalar-uma-versao-publicada">Instalar extensão</a>
   &nbsp;·&nbsp;
@@ -22,12 +22,14 @@
 
 | Seu objetivo | Caminho recomendado |
 | --- | --- |
-| Criar seu próprio Supabase e Gemini | Siga o [guia de configuração manual](docs/configuracao-manual.md). |
+| Criar seu próprio Supabase e Gemini | Siga o [guia sem terminal no Dashboard](docs/configuracao-manual.md#roteiro-recomendado-sem-terminal). |
 | Apenas testar uma versão pronta | Baixe o ZIP de uma Release e siga os passos abaixo. |
 | Alterar o código da extensão | Clone o repositório e compile localmente. |
 
-O guia manual cobre Supabase Auth, banco com RLS, Gemini e Edge Function. Cada
-pessoa usa o próprio projeto e a própria chave Gemini.
+O guia de configuração cobre Supabase Auth, banco com RLS, Gemini e Edge
+Function. O roteiro recomendado usa o Dashboard do Supabase e a extensão; há
+uma seção opcional de terminal para validar API, JWT, RLS e limites. Cada pessoa
+usa o próprio projeto e a própria chave Gemini.
 
 ## Modos de uso
 
@@ -81,7 +83,7 @@ ela fica no seu disco, mas não é enviada ao Git.
 ## Estrutura do repositório
 
 ```text
-docs/                 guia único de configuração manual
+docs/                 guia de configuração pelo Dashboard e validação avançada
 supabase/             SQL e Edge Function copiados no Dashboard
 extension/            código-fonte da extensão Chrome
 extension/dist/       extensão compilada local (ignorada pelo Git)
